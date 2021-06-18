@@ -205,42 +205,39 @@ func (s *APISetu) GetAppointmentsForADistrict(ctx context.Context, districtID in
 		return
 	}
 
-	//appointmentsChan := make(chan Appointment, len(centersResp.Centers))
-
-	//s.appointsChan <- appointmentsChan
-
 	for _, center := range centersResp.Centers {
-		var appointment Appointment
 
 		for _, session := range center.Sessions {
+
+			var appointment Appointment
+
+			if session.AvailableCapacity <= 0 {
+				continue
+			}
+
 			appointment.AvailableCapacity = int64(session.AvailableCapacity)
 			appointment.Date = session.Date
 			appointment.VaccineProvider = session.Vaccine
 			appointment.Slots = session.Slots
 			appointment.MinAgeLimit45 = session.MinAgeLimit == 45
 			appointment.MinAgeLimit18 = session.MinAgeLimit == 18
+
+			appointment.District = center.DistrictName
+			appointment.From = center.From
+			appointment.To = center.To
+			appointment.Fee = center.FeeType
+			appointment.Pincode = int64(center.Pincode)
+			appointment.CenterName = center.Name
+			appointment.CenterID = int64(center.CenterID)
+
+			fmt.Printf("Writing to channel:%#v\n", appointment.CenterName)
+			s.appointsChan <- appointment
+			fmt.Printf("Wrote to channel\n")
 		}
 
-		appointment.District = center.DistrictName
-		appointment.From = center.From
-		appointment.To = center.To
-		appointment.Fee = center.FeeType
-		appointment.Pincode = int64(center.Pincode)
-		appointment.CenterName = center.Name
-		appointment.CenterID = int64(center.CenterID)
-
-		fmt.Printf("Writing to channel:%#v\n", appointment.CenterName)
-		s.appointsChan <- appointment
-		fmt.Printf("Wrote to channel\n")
-
-		//appointments = append(appointments, appointment)
-		//appointmentsChan <- appointment
 	}
 
 	fmt.Printf("Exiting go routine\n")
-	// s.appointsChan <- app
-
-	//return appointments, nil
 }
 
 // func (s *APISetu) MergeAppointments(appointments ...<-chan Appointment) <-chan Appointment {
